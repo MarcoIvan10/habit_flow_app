@@ -1,0 +1,33 @@
+name: habit_flow_app
+description: "HabitFlow Mobile - Seguimiento de hábitos diarios, cálculo de rachas y analítica visual semanal."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.7.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  flutter_riverpod: ^2.6.1
+  supabase_flutter: ^2.8.4
+  fl_chart: ^0.70.2
+  intl: ^0.19.0
+  google_fonts: ^6.2.1
+  lucide_icons: ^0.257.0
+  confetti: ^0.8.0
+  flutter_dotenv: ^5.2.1
+  shared_preferences: ^2.5.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - .env
