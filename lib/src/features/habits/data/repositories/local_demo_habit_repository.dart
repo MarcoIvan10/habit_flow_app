@@ -1,15 +1,12 @@
-import '../../../../core/utils/date_utils.dart';
+import '../../../../core/utils/habit_date_utils.dart';
 import '../../../../core/utils/validators.dart';
 import '../../domain/entities/habit.dart';
 import '../../domain/entities/habit_log.dart';
 import '../../domain/repositories/habit_repository.dart';
 
-/// Implementación local en memoria de [HabitRepository] para Modo Demo.
-///
-/// Semilla inicial de hábitos y registros realistas para explorar todas las
-/// funcionalidades (KPIs, matriz semanal, rachas y gráficos `fl_chart`) sin
-/// requerir conexión activa a Supabase.
+/// In-memory implementation of [HabitRepository] used for local demo mode.
 final class LocalDemoHabitRepository implements HabitRepository {
+  /// Creates a [LocalDemoHabitRepository] pre-populated with sample habits and check-in history.
   LocalDemoHabitRepository() {
     _seedInitialData();
   }
@@ -17,75 +14,6 @@ final class LocalDemoHabitRepository implements HabitRepository {
   final List<Habit> _habits = [];
   final List<HabitLog> _logs = [];
   int _idCounter = 100;
-
-  void _seedInitialData() {
-    final now = DateTime.now();
-    final today = HabitDateUtils.dateOnly(now);
-
-    final initialHabits = [
-      Habit(
-        id: 'demo-habit-1',
-        userId: 'demo-user-001',
-        name: 'Beber 2L de agua',
-        category: 'Salud',
-        icon: '💧',
-        color: 'cyan',
-        createdAt: today.subtract(const Duration(days: 14)),
-      ),
-      Habit(
-        id: 'demo-habit-2',
-        userId: 'demo-user-001',
-        name: 'Entrenamiento de fuerza',
-        category: 'Deporte',
-        icon: '🏋️',
-        color: 'emerald',
-        createdAt: today.subtract(const Duration(days: 14)),
-      ),
-      Habit(
-        id: 'demo-habit-3',
-        userId: 'demo-user-001',
-        name: 'Lectura 30 minutos',
-        category: 'Mente',
-        icon: '📚',
-        color: 'indigo',
-        createdAt: today.subtract(const Duration(days: 14)),
-      ),
-      Habit(
-        id: 'demo-habit-4',
-        userId: 'demo-user-001',
-        name: 'Meditación consciente',
-        category: 'Mente',
-        icon: '🧘',
-        color: 'purple',
-        createdAt: today.subtract(const Duration(days: 14)),
-      ),
-    ];
-
-    _habits.addAll(initialHabits);
-
-    // Generar check-ins de muestra en los últimos días para visualizar rachas y gráficas
-    final offsetsByHabit = <String, List<int>>{
-      'demo-habit-1': [0, 1, 2, 3, 4, 5, 7, 8, 9],
-      'demo-habit-2': [0, 1, 2, 4, 6, 7, 8, 9, 10],
-      'demo-habit-3': [1, 2, 3, 4, 5, 6, 7],
-      'demo-habit-4': [0, 1, 3, 4, 5],
-    };
-
-    offsetsByHabit.forEach((habitId, dayOffsets) {
-      for (final offset in dayOffsets) {
-        final date = DateTime(today.year, today.month, today.day - offset);
-        _logs.add(
-          HabitLog(
-            id: 'demo-log-${_idCounter++}',
-            habitId: habitId,
-            userId: 'demo-user-001',
-            completedDate: HabitDateUtils.toIsoDateString(date),
-            createdAt: date,
-          ),
-        );
-      }
-    });
-  }
 
   @override
   Future<List<Habit>> fetchHabits() async {
@@ -173,12 +101,78 @@ final class LocalDemoHabitRepository implements HabitRepository {
         );
       }
       return true;
-    } else {
-      _logs.removeWhere(
-        (l) => l.habitId == habitId && l.completedDate == isoDate,
-      );
-      return false;
     }
+
+    _logs.removeWhere(
+      (l) => l.habitId == habitId && l.completedDate == isoDate,
+    );
+    return false;
+  }
+
+  void _seedInitialData() {
+    final today = HabitDateUtils.dateOnly(DateTime.now());
+
+    final initialHabits = [
+      Habit(
+        id: 'demo-habit-1',
+        userId: 'demo-user-001',
+        name: 'Beber 2L de agua',
+        category: 'Salud',
+        icon: '💧',
+        color: 'cyan',
+        createdAt: today.subtract(const Duration(days: 14)),
+      ),
+      Habit(
+        id: 'demo-habit-2',
+        userId: 'demo-user-001',
+        name: 'Entrenamiento de fuerza',
+        category: 'Deporte',
+        icon: '🏋️',
+        color: 'emerald',
+        createdAt: today.subtract(const Duration(days: 14)),
+      ),
+      Habit(
+        id: 'demo-habit-3',
+        userId: 'demo-user-001',
+        name: 'Lectura 30 minutos',
+        category: 'Mente',
+        icon: '📚',
+        color: 'indigo',
+        createdAt: today.subtract(const Duration(days: 14)),
+      ),
+      Habit(
+        id: 'demo-habit-4',
+        userId: 'demo-user-001',
+        name: 'Meditación consciente',
+        category: 'Mente',
+        icon: '🧘',
+        color: 'purple',
+        createdAt: today.subtract(const Duration(days: 14)),
+      ),
+    ];
+
+    _habits.addAll(initialHabits);
+
+    final offsetsByHabit = <String, List<int>>{
+      'demo-habit-1': [0, 1, 2, 3, 4, 5, 7, 8, 9],
+      'demo-habit-2': [0, 1, 2, 4, 6, 7, 8, 9, 10],
+      'demo-habit-3': [1, 2, 3, 4, 5, 6, 7],
+      'demo-habit-4': [0, 1, 3, 4, 5],
+    };
+
+    offsetsByHabit.forEach((habitId, dayOffsets) {
+      for (final offset in dayOffsets) {
+        final date = DateTime(today.year, today.month, today.day - offset);
+        _logs.add(
+          HabitLog(
+            id: 'demo-log-${_idCounter++}',
+            habitId: habitId,
+            userId: 'demo-user-001',
+            completedDate: HabitDateUtils.toIsoDateString(date),
+            createdAt: date,
+          ),
+        );
+      }
+    });
   }
 }
-

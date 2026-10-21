@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 
-/// Selector de semana activa y barra de filtros por categoría.
+/// Provides week navigation controls and horizontal category filter chips.
 class WeekNavigatorWidget extends StatelessWidget {
+  /// Creates a [WeekNavigatorWidget].
   const WeekNavigatorWidget({
     required this.weekRangeLabel,
     required this.weekOffset,
@@ -16,13 +17,36 @@ class WeekNavigatorWidget extends StatelessWidget {
     super.key,
   });
 
+  /// Formatted date range label for the selected week.
   final String weekRangeLabel;
+
+  /// Relative week offset (`0` for current week, negative for past weeks).
   final int weekOffset;
+
+  /// Currently selected category filter name.
   final String selectedCategory;
+
+  /// Callback triggered when navigating to the previous week.
   final VoidCallback onPreviousWeek;
+
+  /// Callback triggered when navigating to the next week.
   final VoidCallback onNextWeek;
+
+  /// Callback triggered when resetting directly to the current week.
   final VoidCallback onResetToday;
+
+  /// Callback triggered when selecting a category chip.
   final ValueChanged<String> onCategorySelected;
+
+  String _resolveWeekTitle() {
+    if (weekOffset == 0) {
+      return 'Esta Semana';
+    }
+    if (weekOffset == -1) {
+      return 'Semana Pasada';
+    }
+    return 'Hace ${weekOffset.abs()} semanas';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,11 +71,7 @@ class WeekNavigatorWidget extends StatelessWidget {
                   child: Column(
                     children: [
                       Text(
-                        weekOffset == 0
-                            ? 'Esta Semana'
-                            : weekOffset == -1
-                                ? 'Semana Pasada'
-                                : 'Hace ${weekOffset.abs()} semanas',
+                        _resolveWeekTitle(),
                         style: textTheme.labelSmall?.copyWith(
                           color: AppColors.indigo500,
                           fontWeight: FontWeight.w700,
@@ -120,4 +140,3 @@ class WeekNavigatorWidget extends StatelessWidget {
     );
   }
 }
-

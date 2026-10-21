@@ -1,24 +1,16 @@
 import 'package:intl/intl.dart';
 
 import '../constants/app_constants.dart';
+import 'week_day_info.dart';
 
-/// Record inmutable de Dart 3 que representa un día dentro de la semana activa.
-typedef WeekDayInfo = ({
-  DateTime date,
-  String isoDate,
-  String shortLabel,
-  int dayNumber,
-  bool isToday,
-  bool isFuture,
-});
-
-/// Utilidades puras para manejo de fechas en zona horaria local y formato ISO `YYYY-MM-DD`.
+/// Provides pure, timezone-safe date utilities for ISO `YYYY-MM-DD` formatting
+/// and Monday-to-Sunday weekly calendar generation.
 abstract final class HabitDateUtils {
-  /// Trunca un [DateTime] a medianoche local (`00:00:00`).
+  /// Truncates a [DateTime] to local midnight (`00:00:00`).
   static DateTime dateOnly(DateTime date) =>
       DateTime(date.year, date.month, date.day);
 
-  /// Convierte un [DateTime] a cadena ISO `YYYY-MM-DD`.
+  /// Formats a [DateTime] into a canonical `YYYY-MM-DD` string.
   static String toIsoDateString(DateTime date) {
     final year = date.year.toString().padLeft(4, '0');
     final month = date.month.toString().padLeft(2, '0');
@@ -26,7 +18,7 @@ abstract final class HabitDateUtils {
     return '$year-$month-$day';
   }
 
-  /// Parsea una cadena `YYYY-MM-DD` a [DateTime] local sin desfase UTC.
+  /// Parses an ISO `YYYY-MM-DD` string into a local midnight [DateTime].
   static DateTime parseIsoDate(String isoDate) {
     final parts = isoDate.split('-');
     if (parts.length != 3) {
@@ -39,15 +31,15 @@ abstract final class HabitDateUtils {
     );
   }
 
-  /// Obtiene la cadena ISO `YYYY-MM-DD` correspondiente al día de hoy.
+  /// Returns today's local date formatted as `YYYY-MM-DD`.
   static String todayIso() => toIsoDateString(DateTime.now());
 
-  /// Calcula el lunes de la semana correspondiente al [weekOffset]
-  /// (`0` = semana actual, `-1` = semana pasada, etc.).
+  /// Computes the Monday date for the week shifted by [weekOffset] relative to [referenceDate].
   static DateTime startOfWeek({int weekOffset = 0, DateTime? referenceDate}) {
-    final ref = dateOnly(referenceDate ?? DateTime.now());
-    // En Dart: weekday 1 = Lunes, 7 = Domingo
-    final mondayOfCurrentWeek = ref.subtract(Duration(days: ref.weekday - 1));
+    final reference = dateOnly(referenceDate ?? DateTime.now());
+    final mondayOfCurrentWeek = reference.subtract(
+      Duration(days: reference.weekday - 1),
+    );
     return DateTime(
       mondayOfCurrentWeek.year,
       mondayOfCurrentWeek.month,
@@ -55,7 +47,7 @@ abstract final class HabitDateUtils {
     );
   }
 
-  /// Devuelve los 7 días (`Lun` a `Dom`) de la semana indicada por [weekOffset].
+  /// Generates the 7 [WeekDayInfo] items from Monday to Sunday for the given [weekOffset].
   static List<WeekDayInfo> getWeekDays({
     int weekOffset = 0,
     DateTime? referenceDate,
@@ -79,7 +71,7 @@ abstract final class HabitDateUtils {
     });
   }
 
-  /// Formatea el rango de la semana seleccionada (ej. `13 oct - 19 oct 2026`).
+  /// Formats a human-readable Spanish date range label for the week at [weekOffset].
   static String formatWeekRangeLabel({
     int weekOffset = 0,
     DateTime? referenceDate,

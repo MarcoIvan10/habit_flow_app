@@ -2,19 +2,42 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Notifier moderno (Riverpod 2.x) para controlar y persistir el modo de tema (Claro / Oscuro / Sistema).
-///
-/// Diseñado para arranque instantáneo (0ms) sin bloquear la ejecución inicial de `runApp()`.
+/// Manages the active [ThemeMode] and persists user preference asynchronously
+/// without blocking initial application startup.
 class ThemeModeNotifier extends Notifier<ThemeMode> {
   static const String _storageKey = 'habitflow_theme_mode';
 
   @override
   ThemeMode build() {
-    _loadSavedTheme();
+    _restorePersistedTheme();
     return ThemeMode.system;
   }
 
-  Future<void> _loadSavedTheme() async {
+  /// Toggles between [ThemeMode.light] and [ThemeMode.dark] based on [currentBrightness].
+  Future<void> toggleTheme(Brightness currentBrightness) async {
+    final nextMode = currentBrightness == Brightness.dark
+        ? ThemeMode.light
+        : ThemeMode.dark;
+    await setThemeMode(nextMode);
+  }
+
+  /// Sets and persists the selected [mode] in local storage.
+  Future<void> setThemeMode(ThemeMode mode) async {
+    state = mode;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final serialized = switch (mode) {
+        ThemeMode.light => 'light',
+        ThemeMode.dark => 'dark',
+        ThemeMode.system => 'system',
+      };
+      await prefs.setString(_storageKey, serialized);
+    } catch (_) {
+      return;
+    }
+  }
+
+  Future<void> _restorePersistedTheme() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final saved = prefs.getString(_storageKey);
@@ -26,33 +49,12 @@ class ThemeModeNotifier extends Notifier<ThemeMode> {
         };
       }
     } catch (_) {
-      // Si el canal de SharedPreferences aún no está disponible, se mantiene ThemeMode.system
-    }
-  }
-
-  Future<void> toggleTheme(Brightness currentBrightness) async {
-    final nextMode = currentBrightness == Brightness.dark
-        ? ThemeMode.light
-        : ThemeMode.dark;
-    await setThemeMode(nextMode);
-  }
-
-  Future<void> setThemeMode(ThemeMode mode) async {
-    state = mode;
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final value = switch (mode) {
-        ThemeMode.light => 'light',
-        ThemeMode.dark => 'dark',
-        ThemeMode.system => 'system',
-      };
-      await prefs.setString(_storageKey, value);
-    } catch (_) {
-      // Ignorar fallas de persistencia para no bloquear la UI
+      return;
     }
   }
 }
 
+/// Provides reactive access to [ThemeModeNotifier] and the current [ThemeMode].
 final themeModeProvider = NotifierProvider<ThemeModeNotifier, ThemeMode>(
   ThemeModeNotifier.new,
 );

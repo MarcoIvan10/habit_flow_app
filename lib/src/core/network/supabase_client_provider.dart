@@ -3,18 +3,15 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../constants/env_config.dart';
 
-/// Indica si Supabase fue inicializado exitosamente con credenciales válidas.
+/// Exposes whether Supabase environment credentials are configured and active.
 final isSupabaseInitializedProvider = Provider<bool>((ref) {
   return EnvConfig.isConfigured;
 });
 
-/// Proveedor de infraestructura para el cliente de Supabase.
+/// Provides the singleton [SupabaseClient] instance strictly to data-layer repositories.
 ///
-/// IMPORTANTE (Regla de Arquitectura SOLID):
-/// Este provider SOLO debe ser consumido por implementaciones concretas
-/// dentro de la capa `data/repositories/`. Las capas `domain` y `presentation`
-/// jamás deben depender directamente de `SupabaseClient`.
+/// Architectural Rule (Dependency Inversion Principle):
+/// Domain and presentation layers must never watch or read this provider directly.
 final supabaseClientProvider = Provider<SupabaseClient>((ref) {
   return Supabase.instance.client;
 });
-

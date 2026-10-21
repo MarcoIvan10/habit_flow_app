@@ -3,8 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
 
-/// Configuración de temas Material 3 (Claro y Oscuro) con tipografía Inter.
+/// Builds Material 3 [ThemeData] configurations for both light and dark modes.
 abstract final class AppTheme {
+  /// Returns the Material 3 light theme configuration using the Inter typeface.
   static ThemeData get lightTheme {
     final colorScheme = ColorScheme.fromSeed(
       seedColor: AppColors.indigo600,
@@ -105,6 +106,7 @@ abstract final class AppTheme {
     );
   }
 
+  /// Returns the Material 3 dark theme configuration using the Inter typeface.
   static ThemeData get darkTheme {
     final colorScheme = ColorScheme.fromSeed(
       seedColor: AppColors.indigo500,
@@ -205,4 +207,3 @@ abstract final class AppTheme {
     );
   }
 }
-

@@ -3,11 +3,14 @@ import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/errors/app_exception.dart';
+import '../../../../core/errors/supabase_error_mapper.dart';
 import '../../domain/entities/app_user.dart';
+import '../../domain/models/sign_up_result.dart';
 import '../../domain/repositories/auth_repository.dart';
 
-/// Implementación concreta de [AuthRepository] respaldada por Supabase GoTrue Auth.
+/// Concrete implementation of [AuthRepository] backed by Supabase GoTrue Auth.
 final class SupabaseAuthRepository implements AuthRepository {
+  /// Creates a [SupabaseAuthRepository] using the provided [_client].
   const SupabaseAuthRepository(this._client);
 
   final SupabaseClient _client;
@@ -46,7 +49,7 @@ final class SupabaseAuthRepository implements AuthRepository {
 
       return _mapSupabaseUser(user);
     } catch (error) {
-      throw AppException.fromError(error);
+      throw SupabaseErrorMapper.map(error);
     }
   }
 
@@ -69,7 +72,7 @@ final class SupabaseAuthRepository implements AuthRepository {
         requiresEmailConfirmation: user != null && session == null,
       );
     } catch (error) {
-      throw AppException.fromError(error);
+      throw SupabaseErrorMapper.map(error);
     }
   }
 
@@ -78,7 +81,7 @@ final class SupabaseAuthRepository implements AuthRepository {
     try {
       await _client.auth.signOut();
     } catch (error) {
-      throw AppException.fromError(error);
+      throw SupabaseErrorMapper.map(error);
     }
   }
 
@@ -90,4 +93,3 @@ final class SupabaseAuthRepository implements AuthRepository {
     );
   }
 }
-

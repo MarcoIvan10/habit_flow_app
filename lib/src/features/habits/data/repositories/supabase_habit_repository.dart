@@ -1,6 +1,8 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/errors/app_exception.dart';
+import '../../../../core/errors/supabase_error_mapper.dart';
 import '../../../../core/utils/validators.dart';
 import '../../domain/entities/habit.dart';
 import '../../domain/entities/habit_log.dart';
@@ -8,24 +10,15 @@ import '../../domain/repositories/habit_repository.dart';
 import '../models/habit_dto.dart';
 import '../models/habit_log_dto.dart';
 
-/// Implementación concreta de [HabitRepository] respaldada por PostgreSQL en Supabase con RLS.
+/// Concrete implementation of [HabitRepository] backed by Supabase PostgreSQL with Row Level Security.
 final class SupabaseHabitRepository implements HabitRepository {
+  /// Creates a [SupabaseHabitRepository] using the provided [_client].
   const SupabaseHabitRepository(this._client);
 
   final SupabaseClient _client;
 
   static const String _habitsTable = 'habits';
   static const String _habitLogsTable = 'habit_logs';
-
-  String _requireAuthenticatedUserId() {
-    final userId = _client.auth.currentUser?.id;
-    if (userId == null || userId.isEmpty) {
-      throw const AuthAppException(
-        userMessage: 'Tu sesión ha expirado. Vuelve a iniciar sesión.',
-      );
-    }
-    return userId;
-  }
 
   @override
   Future<List<Habit>> fetchHabits() async {
@@ -42,7 +35,7 @@ final class SupabaseHabitRepository implements HabitRepository {
           .map(HabitDto.fromJson)
           .toList(growable: false);
     } catch (error) {
-      throw AppException.fromError(error);
+      throw SupabaseErrorMapper.map(error);
     }
   }
 
@@ -54,14 +47,15 @@ final class SupabaseHabitRepository implements HabitRepository {
           .from(_habitLogsTable)
           .select()
           .eq('user_id', userId)
-          .order('completed_date', ascending: true);
+          .order('completed_date', ascending: false)
+          .limit(AppConstants.maxHabitLogsFetchLimit);
 
       return (rows as List<dynamic>)
           .cast<Map<String, dynamic>>()
           .map(HabitLogDto.fromJson)
           .toList(growable: false);
     } catch (error) {
-      throw AppException.fromError(error);
+      throw SupabaseErrorMapper.map(error);
     }
   }
 
@@ -74,11 +68,11 @@ final class SupabaseHabitRepository implements HabitRepository {
   }) async {
     try {
       final userId = _requireAuthenticatedUserId();
-      final sanitizedName = Validators.sanitizeText(name);
-      final validationError = Validators.validateHabitName(sanitizedName);
-      if (validationError != null) {
-        throw ValidationAppException(userMessage: validationError);
-      }
+      final sanitizedName = _validateAndSanitizeHabitAttributes(
+        name: name,
+        category: category,
+        color: color,
+      );
 
       final payload = HabitDto.toInsertJson(
         userId: userId,
@@ -96,7 +90,7 @@ final class SupabaseHabitRepository implements HabitRepository {
 
       return HabitDto.fromJson(inserted);
     } catch (error) {
-      throw AppException.fromError(error);
+      throw SupabaseErrorMapper.map(error);
     }
   }
 
@@ -110,11 +104,11 @@ final class SupabaseHabitRepository implements HabitRepository {
   }) async {
     try {
       final userId = _requireAuthenticatedUserId();
-      final sanitizedName = Validators.sanitizeText(name);
-      final validationError = Validators.validateHabitName(sanitizedName);
-      if (validationError != null) {
-        throw ValidationAppException(userMessage: validationError);
-      }
+      final sanitizedName = _validateAndSanitizeHabitAttributes(
+        name: name,
+        category: category,
+        color: color,
+      );
 
       final payload = HabitDto.toUpdateJson(
         name: sanitizedName,
@@ -133,7 +127,7 @@ final class SupabaseHabitRepository implements HabitRepository {
 
       return HabitDto.fromJson(updated);
     } catch (error) {
-      throw AppException.fromError(error);
+      throw SupabaseErrorMapper.map(error);
     }
   }
 
@@ -147,7 +141,7 @@ final class SupabaseHabitRepository implements HabitRepository {
           .eq('id', habitId)
           .eq('user_id', userId);
     } catch (error) {
-      throw AppException.fromError(error);
+      throw SupabaseErrorMapper.map(error);
     }
   }
 
@@ -171,18 +165,50 @@ final class SupabaseHabitRepository implements HabitRepository {
               onConflict: 'habit_id,completed_date',
             );
         return true;
-      } else {
-        await _client
-            .from(_habitLogsTable)
-            .delete()
-            .eq('habit_id', habitId)
-            .eq('user_id', userId)
-            .eq('completed_date', isoDate);
-        return false;
       }
+
+      await _client
+          .from(_habitLogsTable)
+          .delete()
+          .eq('habit_id', habitId)
+          .eq('user_id', userId)
+          .eq('completed_date', isoDate);
+      return false;
     } catch (error) {
-      throw AppException.fromError(error);
+      throw SupabaseErrorMapper.map(error);
     }
   }
-}
 
+  String _requireAuthenticatedUserId() {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null || userId.isEmpty) {
+      throw const AuthAppException(
+        userMessage: 'Tu sesión ha expirado. Vuelve a iniciar sesión.',
+      );
+    }
+    return userId;
+  }
+
+  String _validateAndSanitizeHabitAttributes({
+    required String name,
+    required String category,
+    required String color,
+  }) {
+    final sanitizedName = Validators.sanitizeText(name);
+    final nameError = Validators.validateHabitName(sanitizedName);
+    if (nameError != null) {
+      throw ValidationAppException(userMessage: nameError);
+    }
+    if (!AppConstants.categories.contains(category)) {
+      throw const ValidationAppException(
+        userMessage: 'La categoría seleccionada no es válida.',
+      );
+    }
+    if (!AppConstants.accentColorKeys.contains(color)) {
+      throw const ValidationAppException(
+        userMessage: 'El color seleccionado no es válido.',
+      );
+    }
+    return sanitizedName;
+  }
+}

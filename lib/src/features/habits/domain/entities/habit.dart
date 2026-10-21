@@ -1,5 +1,6 @@
-/// Entidad inmutable de dominio que representa un hábito configurado por el usuario.
+/// Immutable domain entity representing a user-configured habit.
 final class Habit {
+  /// Creates a [Habit] instance.
   const Habit({
     required this.id,
     required this.userId,
@@ -10,14 +11,28 @@ final class Habit {
     required this.createdAt,
   });
 
+  /// Unique UUID identifier of the habit.
   final String id;
+
+  /// Owner user UUID identifier.
   final String userId;
+
+  /// Display name of the habit.
   final String name;
+
+  /// Category classification of the habit.
   final String category;
+
+  /// Emoji icon representing the habit.
   final String icon;
+
+  /// Accent color key associated with the habit.
   final String color;
+
+  /// Creation timestamp of the habit.
   final DateTime createdAt;
 
+  /// Returns a copy of this [Habit] with the specified fields updated.
   Habit copyWith({
     String? id,
     String? userId,
@@ -53,4 +68,3 @@ final class Habit {
   @override
   int get hashCode => Object.hash(id, userId, name, category, icon, color);
 }
-

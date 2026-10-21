@@ -4,24 +4,20 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/validators.dart';
 import '../../domain/entities/habit.dart';
+import '../../domain/models/habit_form_payload.dart';
 
-/// Resultado devuelto por el formulario modal de hábito (Record de Dart 3).
-typedef HabitFormPayload = ({
-  String name,
-  String category,
-  String icon,
-  String color,
-});
-
-/// ModalBottomSheet para crear o editar un hábito (Sección 5.6 de la especificación).
+/// Modal bottom sheet form used to create a new habit or edit an existing [Habit].
 class HabitFormSheet extends StatefulWidget {
+  /// Creates a [HabitFormSheet].
   const HabitFormSheet({
     this.initialHabit,
     super.key,
   });
 
+  /// Optional existing habit to pre-populate the form for editing.
   final Habit? initialHabit;
 
+  /// Displays the [HabitFormSheet] modal and resolves with a [HabitFormPayload] when submitted.
   static Future<HabitFormPayload?> show(
     BuildContext context, {
     Habit? initialHabit,
@@ -65,9 +61,11 @@ class _HabitFormSheetState extends State<HabitFormSheet> {
   }
 
   void _submit() {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      return;
+    }
 
-    final payload = (
+    final HabitFormPayload payload = (
       name: Validators.sanitizeText(_nameController.text),
       category: _selectedCategory,
       icon: _selectedIcon,
@@ -93,7 +91,6 @@ class _HabitFormSheetState extends State<HabitFormSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Indicador superior de arrastre
               Center(
                 child: Container(
                   width: 40,
@@ -137,8 +134,6 @@ class _HabitFormSheetState extends State<HabitFormSheet> {
                 ],
               ),
               const SizedBox(height: 20),
-
-              // Campo Nombre
               TextFormField(
                 controller: _nameController,
                 autofocus: !_isEditing,
@@ -153,8 +148,6 @@ class _HabitFormSheetState extends State<HabitFormSheet> {
                 ),
               ),
               const SizedBox(height: 20),
-
-              // Selector de Categoría
               Text(
                 'Categoría',
                 style: textTheme.labelLarge?.copyWith(
@@ -186,8 +179,6 @@ class _HabitFormSheetState extends State<HabitFormSheet> {
                 }).toList(growable: false),
               ),
               const SizedBox(height: 20),
-
-              // Selector de Icono/Emoji
               Text(
                 'Icono',
                 style: textTheme.labelLarge?.copyWith(
@@ -216,8 +207,7 @@ class _HabitFormSheetState extends State<HabitFormSheet> {
                                 : AppColors.slate100),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color:
-                              isSelected ? accentColor : Colors.transparent,
+                          color: isSelected ? accentColor : Colors.transparent,
                           width: 2,
                         ),
                       ),
@@ -230,8 +220,6 @@ class _HabitFormSheetState extends State<HabitFormSheet> {
                 }).toList(growable: false),
               ),
               const SizedBox(height: 20),
-
-              // Selector de Color de Acento
               Text(
                 'Color de acento',
                 style: textTheme.labelLarge?.copyWith(
@@ -282,7 +270,6 @@ class _HabitFormSheetState extends State<HabitFormSheet> {
                 }).toList(growable: false),
               ),
               const SizedBox(height: 28),
-
               FilledButton.icon(
                 style: FilledButton.styleFrom(
                   backgroundColor: accentColor,
@@ -302,4 +289,3 @@ class _HabitFormSheetState extends State<HabitFormSheet> {
     );
   }
 }
-

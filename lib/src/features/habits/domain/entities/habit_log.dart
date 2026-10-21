@@ -1,5 +1,6 @@
-/// Entidad inmutable de dominio que representa el registro diario (check-in) de un hábito.
+/// Immutable domain entity representing a single daily check-in log for a habit.
 final class HabitLog {
+  /// Creates a [HabitLog] instance.
   const HabitLog({
     required this.id,
     required this.habitId,
@@ -8,12 +9,19 @@ final class HabitLog {
     required this.createdAt,
   });
 
+  /// Unique UUID identifier of the log entry.
   final String id;
+
+  /// Identifier of the associated [Habit].
   final String habitId;
+
+  /// Identifier of the user who owns this log entry.
   final String userId;
 
-  /// Fecha completada en formato ISO `YYYY-MM-DD`.
+  /// Completed calendar date in canonical ISO `YYYY-MM-DD` format.
   final String completedDate;
+
+  /// Creation timestamp of the log entry.
   final DateTime createdAt;
 
   @override
@@ -29,4 +37,3 @@ final class HabitLog {
   @override
   int get hashCode => Object.hash(id, habitId, userId, completedDate);
 }
-

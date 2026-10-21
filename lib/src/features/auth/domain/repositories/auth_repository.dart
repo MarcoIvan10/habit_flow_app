@@ -1,36 +1,26 @@
 import '../entities/app_user.dart';
+import '../models/sign_up_result.dart';
 
-/// Resultado de registro usando un Record de Dart 3:
-/// - `user`: Usuario autenticado o creado.
-/// - `requiresEmailConfirmation`: `true` si Supabase requiere verificar el correo antes de iniciar sesión.
-typedef SignUpResult = ({
-  AppUser? user,
-  bool requiresEmailConfirmation,
-});
-
-/// Contrato de repositorio de autenticación (Principio de Inversión de Dependencias - SOLID).
-///
-/// La capa de presentación y dominio solo conocen esta interfaz, nunca `SupabaseClient`.
+/// Abstract repository contract for authentication and session lifecycle operations.
 abstract interface class AuthRepository {
-  /// Usuario actualmente autenticado, o `null` si no existe sesión activa.
+  /// Currently authenticated user, or `null` if no session is active.
   AppUser? get currentUser;
 
-  /// Flujo reactivo de cambios en la sesión del usuario.
+  /// Emits the current [AppUser] whenever the authentication state changes.
   Stream<AppUser?> watchAuthStateChanges();
 
-  /// Inicia sesión con correo electrónico y contraseña.
+  /// Authenticates a user using [email] and [password].
   Future<AppUser> signInWithEmailAndPassword({
     required String email,
     required String password,
   });
 
-  /// Registra una nueva cuenta con correo electrónico y contraseña.
+  /// Registers a new user account using [email] and [password].
   Future<SignUpResult> signUpWithEmailAndPassword({
     required String email,
     required String password,
   });
 
-  /// Cierra la sesión activa de forma segura.
+  /// Terminates the active user session.
   Future<void> signOut();
 }
-

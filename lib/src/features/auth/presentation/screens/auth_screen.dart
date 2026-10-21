@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/constants/app_constants.dart';
 import '../../../../core/network/supabase_client_provider.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/theme_mode_provider.dart';
 import '../../../../core/utils/validators.dart';
-import '../../domain/models/auth_ui_state.dart';
+import '../../domain/enums/auth_form_mode.dart';
+import '../../domain/states/auth_submission_state.dart';
 import '../providers/auth_providers.dart';
+import '../widgets/auth_brand_header.dart';
+import '../widgets/auth_feedback_banner.dart';
+import '../widgets/auth_mode_segmented_toggle.dart';
 import '../widgets/supabase_mode_banner.dart';
 
-/// Pantalla de Autenticación (Login / Registro) con diseño SaaS moderno y soporte Dark Mode.
+/// Top-level authentication screen providing login and account registration forms.
 class AuthScreen extends ConsumerStatefulWidget {
+  /// Creates an [AuthScreen].
   const AuthScreen({super.key});
 
   @override
@@ -34,7 +37,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   }
 
   void _switchMode(AuthFormMode nextMode) {
-    if (_mode == nextMode) return;
+    if (_mode == nextMode) {
+      return;
+    }
     setState(() => _mode = nextMode);
     _formKey.currentState?.reset();
     ref.read(authSubmissionProvider.notifier).resetState();
@@ -42,7 +47,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
   Future<void> _onSubmit() async {
     FocusScope.of(context).unfocus();
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      return;
+    }
 
     await ref.read(authSubmissionProvider.notifier).submit(
           mode: _mode,
@@ -51,16 +58,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final submissionState = ref.watch(authSubmissionProvider);
-    final isSupabaseConfigured = ref.watch(isSupabaseInitializedProvider);
-    final brightness = Theme.of(context).brightness;
-    final isDark = brightness == Brightness.dark;
-
-    // Pattern matching exhaustivo sobre el estado sellado AuthSubmissionState
-    final (:bool isSubmitting, :String? feedbackBanner, :bool isErrorBanner) =
-        switch (submissionState) {
+  ({bool isSubmitting, String? feedbackBanner, bool isErrorBanner})
+      _resolveSubmissionViewState(AuthSubmissionState submissionState) {
+    return switch (submissionState) {
       AuthSubmissionIdle() => (
           isSubmitting: false,
           feedbackBanner: null,
@@ -82,6 +82,15 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           isErrorBanner: true,
         ),
     };
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final submissionState = ref.watch(authSubmissionProvider);
+    final isSupabaseConfigured = ref.watch(isSupabaseInitializedProvider);
+    final brightness = Theme.of(context).brightness;
+    final isDark = brightness == Brightness.dark;
+    final viewState = _resolveSubmissionViewState(submissionState);
 
     return Scaffold(
       appBar: AppBar(
@@ -109,7 +118,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const _AuthBrandHeader(),
+                  const AuthBrandHeader(),
                   const SizedBox(height: 24),
                   SupabaseModeBanner(
                     isSupabaseConfigured: isSupabaseConfigured,
@@ -123,22 +132,22 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            _AuthModeSegmentedToggle(
+                            AuthModeSegmentedToggle(
                               currentMode: _mode,
-                              enabled: !isSubmitting,
+                              enabled: !viewState.isSubmitting,
                               onChanged: _switchMode,
                             ),
                             const SizedBox(height: 24),
-                            if (feedbackBanner != null) ...[
-                              _FeedbackAlertBanner(
-                                message: feedbackBanner,
-                                isError: isErrorBanner,
+                            if (viewState.feedbackBanner != null) ...[
+                              AuthFeedbackBanner(
+                                message: viewState.feedbackBanner!,
+                                isError: viewState.isErrorBanner,
                               ),
                               const SizedBox(height: 16),
                             ],
                             TextFormField(
                               controller: _emailController,
-                              enabled: !isSubmitting,
+                              enabled: !viewState.isSubmitting,
                               keyboardType: TextInputType.emailAddress,
                               textInputAction: TextInputAction.next,
                               autocorrect: false,
@@ -153,7 +162,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                             const SizedBox(height: 16),
                             TextFormField(
                               controller: _passwordController,
-                              enabled: !isSubmitting,
+                              enabled: !viewState.isSubmitting,
                               obscureText: _obscurePassword,
                               textInputAction: TextInputAction.done,
                               autofillHints: _mode == AuthFormMode.signIn
@@ -188,8 +197,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                             ),
                             const SizedBox(height: 24),
                             FilledButton(
-                              onPressed: isSubmitting ? null : _onSubmit,
-                              child: isSubmitting
+                              onPressed:
+                                  viewState.isSubmitting ? null : _onSubmit,
+                              child: viewState.isSubmitting
                                   ? const SizedBox(
                                       height: 20,
                                       width: 20,
@@ -218,138 +228,3 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     );
   }
 }
-
-class _AuthBrandHeader extends StatelessWidget {
-  const _AuthBrandHeader();
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
-    return Column(
-      children: [
-        Container(
-          width: 64,
-          height: 64,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [AppColors.indigo500, AppColors.emerald500],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.indigo500.withValues(alpha: 0.28),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: const Icon(
-            Icons.bolt_rounded,
-            color: Colors.white,
-            size: 36,
-          ),
-        ),
-        const SizedBox(height: 16),
-        Text(
-          AppConstants.appName,
-          style: textTheme.headlineMedium?.copyWith(
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.5,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          AppConstants.appTagline,
-          textAlign: TextAlign.center,
-          style: textTheme.bodyMedium?.copyWith(
-            color: AppColors.slate500,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _AuthModeSegmentedToggle extends StatelessWidget {
-  const _AuthModeSegmentedToggle({
-    required this.currentMode,
-    required this.enabled,
-    required this.onChanged,
-  });
-
-  final AuthFormMode currentMode;
-  final bool enabled;
-  final ValueChanged<AuthFormMode> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return SegmentedButton<AuthFormMode>(
-      showSelectedIcon: false,
-      segments: const [
-        ButtonSegment<AuthFormMode>(
-          value: AuthFormMode.signIn,
-          label: Text('Iniciar Sesión'),
-          icon: Icon(Icons.login_rounded, size: 18),
-        ),
-        ButtonSegment<AuthFormMode>(
-          value: AuthFormMode.signUp,
-          label: Text('Registrarse'),
-          icon: Icon(Icons.person_add_alt_1_rounded, size: 18),
-        ),
-      ],
-      selected: {currentMode},
-      onSelectionChanged: enabled ? (set) => onChanged(set.first) : null,
-    );
-  }
-}
-
-class _FeedbackAlertBanner extends StatelessWidget {
-  const _FeedbackAlertBanner({
-    required this.message,
-    required this.isError,
-  });
-
-  final String message;
-  final bool isError;
-
-  @override
-  Widget build(BuildContext context) {
-    final accentColor = isError ? AppColors.rose500 : AppColors.emerald500;
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: accentColor.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: accentColor.withValues(alpha: 0.35),
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            isError
-                ? Icons.error_outline_rounded
-                : Icons.check_circle_outline_rounded,
-            color: accentColor,
-            size: 20,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              message,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: accentColor,
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-

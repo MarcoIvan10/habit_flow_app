@@ -1,8 +1,8 @@
 import '../../domain/entities/habit.dart';
 
-/// DTO (Data Transfer Object) encargado de serializar/deserializar la tabla `public.habits`
-/// de Supabase PostgreSQL hacia la entidad de dominio [Habit].
+/// Data Transfer Object responsible for serializing and deserializing `public.habits` records.
 abstract final class HabitDto {
+  /// Maps a PostgreSQL row [json] map into a domain [Habit] entity.
   static Habit fromJson(Map<String, dynamic> json) {
     return Habit(
       id: json['id'] as String,
@@ -16,6 +16,7 @@ abstract final class HabitDto {
     );
   }
 
+  /// Builds the JSON payload required to insert a new row into `public.habits`.
   static Map<String, dynamic> toInsertJson({
     required String userId,
     required String name,
@@ -32,6 +33,7 @@ abstract final class HabitDto {
     };
   }
 
+  /// Builds the JSON payload required to update an existing row in `public.habits`.
   static Map<String, dynamic> toUpdateJson({
     required String name,
     required String category,
@@ -46,4 +48,3 @@ abstract final class HabitDto {
     };
   }
 }
-

@@ -1,7 +1,6 @@
-/// Entidad de dominio pura que representa al usuario autenticado.
-///
-/// Desacopla la capa de dominio y presentación del tipo `User` de `supabase_flutter`.
+/// Immutable domain entity representing an authenticated application user.
 final class AppUser {
+  /// Creates an [AppUser] instance.
   const AppUser({
     required this.id,
     required this.email,
@@ -9,12 +8,19 @@ final class AppUser {
     this.isDemo = false,
   });
 
+  /// Unique identifier of the user.
   final String id;
+
+  /// Normalized email address of the user.
   final String email;
+
+  /// Optional account creation timestamp.
   final DateTime? createdAt;
+
+  /// Indicates whether the user is operating in local demo mode.
   final bool isDemo;
 
-  /// Nombre corto derivado del correo para mostrar en encabezados.
+  /// Short display name derived from the local part of [email].
   String get displayName {
     final parts = email.split('@');
     return parts.first.isNotEmpty ? parts.first : 'Usuario';
@@ -32,4 +38,3 @@ final class AppUser {
   @override
   int get hashCode => Object.hash(id, email, isDemo);
 }
-

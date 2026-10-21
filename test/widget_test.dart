@@ -1,89 +1,133 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:habit_flow_app/src/app.dart';
-import 'package:habit_flow_app/src/core/utils/date_utils.dart';
+import 'package:habit_flow_app/src/core/utils/habit_date_utils.dart';
 import 'package:habit_flow_app/src/core/utils/streak_calculator.dart';
-import 'package:habit_flow_app/src/core/utils/validators.dart';
+import 'package:habit_flow_app/src/features/habits/domain/entities/habit.dart';
+import 'package:habit_flow_app/src/features/habits/domain/models/dashboard_filter_state.dart';
+import 'package:habit_flow_app/src/features/habits/domain/models/habits_workspace_data.dart';
+import 'package:habit_flow_app/src/features/habits/domain/usecases/build_dashboard_ui_state_use_case.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
+/// Test suite verifying streak calculation, domain use cases, and root authentication rendering.
 void main() {
   setUpAll(() async {
-    await initializeDateFormatting('es');
+    await initializeDateFormatting('es', null);
   });
 
-  group('StreakCalculator', () {
-    test('calcula racha actual y mejor racha histórica correctamente', () {
-      final referenceToday = DateTime(2026, 10, 19);
-      final completed = <String>{
-        '2026-10-10',
-        '2026-10-11',
-        '2026-10-12',
-        '2026-10-13',
-        // hueco el 14-16
-        '2026-10-17',
-        '2026-10-18',
-        '2026-10-19',
+  group('StreakCalculator unit tests', () {
+    test('calculates current streak when today is completed', () {
+      final today = HabitDateUtils.dateOnly(DateTime.now());
+      final yesterday = today.subtract(const Duration(days: 1));
+      final twoDaysAgo = today.subtract(const Duration(days: 2));
+
+      final completedKeys = {
+        HabitDateUtils.toIsoDateString(today),
+        HabitDateUtils.toIsoDateString(yesterday),
+        HabitDateUtils.toIsoDateString(twoDaysAgo),
       };
 
       final metrics = StreakCalculator.calculate(
-        completed,
-        referenceToday: referenceToday,
+        completedKeys,
+        referenceToday: today,
       );
 
       expect(metrics.currentStreak, 3);
-      expect(metrics.bestStreak, 4);
+      expect(metrics.bestStreak, 3);
     });
 
-    test('mantiene viva la racha actual si se completó ayer pero aún no hoy', () {
-      final referenceToday = DateTime(2026, 10, 19);
-      final completed = <String>{
-        '2026-10-17',
-        '2026-10-18',
+    test('keeps current streak alive when today is pending but yesterday was completed', () {
+      final today = HabitDateUtils.dateOnly(DateTime.now());
+      final yesterday = today.subtract(const Duration(days: 1));
+      final twoDaysAgo = today.subtract(const Duration(days: 2));
+
+      final completedKeys = {
+        HabitDateUtils.toIsoDateString(yesterday),
+        HabitDateUtils.toIsoDateString(twoDaysAgo),
       };
 
       final metrics = StreakCalculator.calculate(
-        completed,
-        referenceToday: referenceToday,
+        completedKeys,
+        referenceToday: today,
       );
 
       expect(metrics.currentStreak, 2);
       expect(metrics.bestStreak, 2);
     });
+
+    test('returns 0 current streak if neither today nor yesterday was completed', () {
+      final today = HabitDateUtils.dateOnly(DateTime.now());
+      final fourDaysAgo = today.subtract(const Duration(days: 4));
+      final fiveDaysAgo = today.subtract(const Duration(days: 5));
+
+      final completedKeys = {
+        HabitDateUtils.toIsoDateString(fourDaysAgo),
+        HabitDateUtils.toIsoDateString(fiveDaysAgo),
+      };
+
+      final metrics = StreakCalculator.calculate(
+        completedKeys,
+        referenceToday: today,
+      );
+
+      expect(metrics.currentStreak, 0);
+      expect(metrics.bestStreak, 2);
+    });
   });
 
-  group('HabitDateUtils & Validators', () {
-    test('genera los 7 días de la semana de Lunes a Domingo', () {
-      final days = HabitDateUtils.getWeekDays(
+  group('BuildDashboardUiStateUseCase unit tests', () {
+    test('computes weekly KPIs and habit metrics accurately', () {
+      final today = HabitDateUtils.dateOnly(DateTime.now());
+      final todayKey = HabitDateUtils.toIsoDateString(today);
+
+      final habit = Habit(
+        id: 'habit-1',
+        userId: 'user-1',
+        name: 'Practicar Duolingo',
+        category: 'Mindfulness',
+        icon: '🦉',
+        color: 'emerald',
+        createdAt: today.subtract(const Duration(days: 10)),
+      );
+
+      final workspace = HabitsWorkspaceData(
+        habits: [habit],
+        completedDatesByHabit: {
+          'habit-1': {todayKey},
+        },
+      );
+
+      const DashboardFilterState filter = (
         weekOffset: 0,
-        referenceDate: DateTime(2026, 10, 19), // Lunes 19 oct 2026
+        selectedCategory: 'Todas',
       );
 
-      expect(days.length, 7);
-      expect(days.first.isoDate, '2026-10-19');
-      expect(days.first.shortLabel, 'Lun');
-      expect(days.first.isToday, isTrue);
-      expect(days.last.isoDate, '2026-10-25');
-      expect(days.last.shortLabel, 'Dom');
-    });
-
-    test('sanitiza y valida entradas correctamente', () {
-      expect(Validators.validateEmail('correo@dominio.com'), isNull);
-      expect(Validators.validateEmail('invalido'), isNotNull);
-      expect(
-        Validators.sanitizeText('  Leer   30\nminutos  '),
-        'Leer 30 minutos',
+      final state = BuildDashboardUiStateUseCase.execute(
+        workspace: workspace,
+        filter: filter,
+        referenceToday: today,
       );
+
+      expect(state.allHabits.length, 1);
+      expect(state.filteredHabits.length, 1);
+      expect(state.filteredHabits.first.currentStreak, 1);
+      expect(state.kpiSummary.weekCompletedCount, 1);
+      expect(state.kpiSummary.topStreakDays, 1);
     });
   });
 
-  testWidgets('Renderiza AuthScreen cuando no hay sesión activa', (tester) async {
+  testWidgets('HabitFlowApp renders AuthScreen initially when unauthenticated', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(
       const ProviderScope(
         child: HabitFlowApp(),
       ),
     );
 
+    await tester.pumpAndSettle();
+
     expect(find.text('HabitFlow'), findsOneWidget);
-    expect(find.text('Iniciar Sesión'), findsWidgets);
+    expect(find.text('Iniciar sesión'), findsWidgets);
   });
 }

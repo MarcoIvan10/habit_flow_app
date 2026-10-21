@@ -2,14 +2,16 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
 
-/// Banner informativo que aparece cuando las credenciales de Supabase aún no se han
-/// configurado en `.env` o `--dart-define`, indicando que el modo Demo local está activo.
+/// Displays an informational banner when Supabase credentials are not configured
+/// and the application is running in local demo mode.
 class SupabaseModeBanner extends StatelessWidget {
+  /// Creates a [SupabaseModeBanner].
   const SupabaseModeBanner({
     required this.isSupabaseConfigured,
     super.key,
   });
 
+  /// Indicates whether Supabase credentials are configured.
   final bool isSupabaseConfigured;
 
   @override
@@ -55,4 +57,3 @@ class SupabaseModeBanner extends StatelessWidget {
     );
   }
 }
-

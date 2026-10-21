@@ -1,13 +1,12 @@
 import 'dart:async';
 
 import '../../domain/entities/app_user.dart';
+import '../../domain/models/sign_up_result.dart';
 import '../../domain/repositories/auth_repository.dart';
 
-/// Implementación en memoria de [AuthRepository] (Principio de Sustitución de Liskov).
-///
-/// Permite utilizar y probar el flujo completo de autenticación cuando aún no se han
-/// inyectado las credenciales de Supabase en `.env` o `--dart-define`.
+/// In-memory implementation of [AuthRepository] used when Supabase credentials are not configured.
 final class LocalDemoAuthRepository implements AuthRepository {
+  /// Creates a [LocalDemoAuthRepository].
   LocalDemoAuthRepository();
 
   final StreamController<AppUser?> _controller =
@@ -63,4 +62,3 @@ final class LocalDemoAuthRepository implements AuthRepository {
     _controller.add(null);
   }
 }
-

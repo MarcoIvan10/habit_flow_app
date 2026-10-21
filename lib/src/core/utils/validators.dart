@@ -1,12 +1,16 @@
 import '../constants/app_constants.dart';
 
-/// Validadores y sanitizadores de entrada para proteger la integridad de los formularios.
+/// Provides input validation and text sanitization rules to protect domain integrity.
 abstract final class Validators {
   static final RegExp _emailRegExp = RegExp(
     r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
   );
 
-  /// Valida formato de correo electrónico.
+  static final RegExp _alphanumericPasswordRegExp = RegExp(
+    r'^(?=.*[A-Za-z])(?=.*\d).+$',
+  );
+
+  /// Validates an email address format and returns a localized error message if invalid.
   static String? validateEmail(String? value) {
     final trimmed = value?.trim() ?? '';
     if (trimmed.isEmpty) {
@@ -18,7 +22,7 @@ abstract final class Validators {
     return null;
   }
 
-  /// Valida longitud y seguridad básica de contraseña.
+  /// Validates password length and complexity requirements.
   static String? validatePassword(String? value, {bool isSignUp = false}) {
     final raw = value ?? '';
     if (raw.isEmpty) {
@@ -27,13 +31,13 @@ abstract final class Validators {
     if (raw.length < AppConstants.minPasswordLength) {
       return 'La contraseña debe tener al menos ${AppConstants.minPasswordLength} caracteres.';
     }
-    if (isSignUp && !RegExp(r'^(?=.*[A-Za-z])(?=.*\d).+$').hasMatch(raw)) {
+    if (isSignUp && !_alphanumericPasswordRegExp.hasMatch(raw)) {
       return 'Incluye al menos una letra y un número.';
     }
     return null;
   }
 
-  /// Valida y sanitiza el nombre de un hábito.
+  /// Validates a habit name after sanitizing whitespace and control characters.
   static String? validateHabitName(String? value) {
     final sanitized = sanitizeText(value ?? '');
     if (sanitized.isEmpty) {
@@ -48,7 +52,7 @@ abstract final class Validators {
     return null;
   }
 
-  /// Normaliza espacios (incluyendo saltos de línea y tabulaciones) y limpia caracteres de control.
+  /// Normalizes consecutive whitespace into a single space and removes ASCII control characters.
   static String sanitizeText(String input) {
     return input
         .replaceAll(RegExp(r'\s+'), ' ')

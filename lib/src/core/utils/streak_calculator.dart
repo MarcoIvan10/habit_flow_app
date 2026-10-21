@@ -1,15 +1,10 @@
-import 'date_utils.dart';
+import 'habit_date_utils.dart';
+import 'streak_metrics.dart';
 
-/// Record de Dart 3 que encapsula las métricas de racha de un hábito.
-typedef StreakMetrics = ({
-  int currentStreak,
-  int bestStreak,
-});
-
-/// Motor determinista de cálculo de rachas diarias (`currentStreak` y `bestStreak`).
+/// Deterministic engine for computing active and historical best habit streaks.
 abstract final class StreakCalculator {
-  /// Calcula la racha vigente y la mejor racha histórica a partir de un conjunto
-  /// de fechas completadas en formato `YYYY-MM-DD`.
+  /// Calculates [StreakMetrics] from a set of `YYYY-MM-DD` [completedIsoDates]
+  /// relative to [referenceToday].
   static StreakMetrics calculate(
     Set<String> completedIsoDates, {
     DateTime? referenceToday,
@@ -19,34 +14,44 @@ abstract final class StreakCalculator {
     }
 
     final today = HabitDateUtils.dateOnly(referenceToday ?? DateTime.now());
-    final yesterday = DateTime(today.year, today.month, today.day - 1);
+    final currentStreak = _computeCurrentStreak(completedIsoDates, today);
+    final bestStreak = _computeBestStreak(completedIsoDates);
 
+    return (
+      currentStreak: currentStreak,
+      bestStreak: bestStreak,
+    );
+  }
+
+  static int _computeCurrentStreak(
+    Set<String> completedIsoDates,
+    DateTime today,
+  ) {
+    final yesterday = DateTime(today.year, today.month, today.day - 1);
     final todayIso = HabitDateUtils.toIsoDateString(today);
     final yesterdayIso = HabitDateUtils.toIsoDateString(yesterday);
 
-    // 1. Cálculo de Racha Actual (currentStreak)
-    // Si está completado hoy, contamos hacia atrás desde hoy.
-    // Si no está completado hoy pero sí ayer, la racha sigue viva y contamos desde ayer.
-    int currentStreak = 0;
     DateTime? cursor;
-
     if (completedIsoDates.contains(todayIso)) {
       cursor = today;
     } else if (completedIsoDates.contains(yesterdayIso)) {
       cursor = yesterday;
     }
 
+    int streak = 0;
     while (cursor != null) {
       final iso = HabitDateUtils.toIsoDateString(cursor);
       if (completedIsoDates.contains(iso)) {
-        currentStreak++;
+        streak++;
         cursor = DateTime(cursor.year, cursor.month, cursor.day - 1);
       } else {
         break;
       }
     }
+    return streak;
+  }
 
-    // 2. Cálculo de Mejor Racha Histórica (bestStreak)
+  static int _computeBestStreak(Set<String> completedIsoDates) {
     final sortedDates = completedIsoDates
         .map(HabitDateUtils.parseIsoDate)
         .toSet()
@@ -66,11 +71,7 @@ abstract final class StreakCalculator {
           previousDate.month,
           previousDate.day + 1,
         );
-        if (date == expectedNext) {
-          runningStreak++;
-        } else {
-          runningStreak = 1;
-        }
+        runningStreak = date == expectedNext ? runningStreak + 1 : 1;
       }
       if (runningStreak > bestStreak) {
         bestStreak = runningStreak;
@@ -78,10 +79,6 @@ abstract final class StreakCalculator {
       previousDate = date;
     }
 
-    return (
-      currentStreak: currentStreak,
-      bestStreak: bestStreak,
-    );
+    return bestStreak;
   }
 }
-
