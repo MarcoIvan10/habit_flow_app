@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -82,9 +83,20 @@ class _HabitFormSheetState extends State<HabitFormSheet> {
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
     final accentColor = AppConstants.resolveHabitColor(_selectedColor);
 
-    return Padding(
-      padding: EdgeInsets.fromLTRB(20, 12, 20, bottomInset + 24),
-      child: SingleChildScrollView(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        systemNavigationBarColor:
+            isDark ? AppColors.slate900 : Colors.white,
+        systemNavigationBarIconBrightness:
+            isDark ? Brightness.light : Brightness.dark,
+        systemNavigationBarDividerColor: Colors.transparent,
+      ),
+      child: SafeArea(
+        top: false,
+        bottom: true,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(20, 12, 20, bottomInset + 16),
+          child: SingleChildScrollView(
         child: Form(
           key: _formKey,
           child: Column(
@@ -286,6 +298,8 @@ class _HabitFormSheetState extends State<HabitFormSheet> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  ),
+);
+}
 }

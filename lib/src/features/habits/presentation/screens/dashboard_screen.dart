@@ -285,38 +285,42 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           style: TextStyle(fontWeight: FontWeight.w700),
         ),
       ),
-      body: Stack(
-        alignment: Alignment.topCenter,
-        children: [
-          switch (uiState) {
-            DashboardUiLoading() => const Center(
-                child: CircularProgressIndicator(),
+      body: SafeArea(
+        top: false,
+        bottom: true,
+        child: Stack(
+          alignment: Alignment.topCenter,
+          children: [
+            switch (uiState) {
+              DashboardUiLoading() => const Center(
+                  child: CircularProgressIndicator(),
+                ),
+              DashboardUiError(:final message) => DashboardErrorView(
+                  message: message,
+                  onRetry: () {
+                    ref.read(habitsControllerProvider.notifier).refresh();
+                  },
+                ),
+              final DashboardUiReady readyState =>
+                _buildReadyBody(readyState, textTheme),
+            },
+            IgnorePointer(
+              child: ConfettiWidget(
+                confettiController: _confettiController,
+                blastDirectionality: BlastDirectionality.explosive,
+                numberOfParticles: 26,
+                gravity: 0.25,
+                colors: const [
+                  AppColors.indigo500,
+                  AppColors.emerald500,
+                  AppColors.amber500,
+                  AppColors.rose500,
+                  AppColors.cyan500,
+                ],
               ),
-            DashboardUiError(:final message) => DashboardErrorView(
-                message: message,
-                onRetry: () {
-                  ref.read(habitsControllerProvider.notifier).refresh();
-                },
-              ),
-            final DashboardUiReady readyState =>
-              _buildReadyBody(readyState, textTheme),
-          },
-          IgnorePointer(
-            child: ConfettiWidget(
-              confettiController: _confettiController,
-              blastDirectionality: BlastDirectionality.explosive,
-              numberOfParticles: 26,
-              gravity: 0.25,
-              colors: const [
-                AppColors.indigo500,
-                AppColors.emerald500,
-                AppColors.amber500,
-                AppColors.rose500,
-                AppColors.cyan500,
-              ],
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

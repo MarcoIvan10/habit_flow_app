@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
@@ -36,6 +37,14 @@ abstract final class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0.5,
         surfaceTintColor: Colors.transparent,
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.dark,
+          statusBarBrightness: Brightness.light,
+          systemNavigationBarColor: AppColors.slate50,
+          systemNavigationBarIconBrightness: Brightness.dark,
+          systemNavigationBarDividerColor: Colors.transparent,
+        ),
         titleTextStyle: baseTextTheme.titleLarge?.copyWith(
           fontWeight: FontWeight.w700,
           color: AppColors.slate900,
@@ -137,6 +146,14 @@ abstract final class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0.5,
         surfaceTintColor: Colors.transparent,
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.light,
+          statusBarBrightness: Brightness.dark,
+          systemNavigationBarColor: AppColors.slate950,
+          systemNavigationBarIconBrightness: Brightness.light,
+          systemNavigationBarDividerColor: Colors.transparent,
+        ),
         titleTextStyle: baseTextTheme.titleLarge?.copyWith(
           fontWeight: FontWeight.w700,
           color: Colors.white,
